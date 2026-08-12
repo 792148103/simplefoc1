@@ -13,3 +13,8 @@ require(*
 # Host OS metadata
 Thumbs.db
 Desktop.ini
+
+# Literal filename with square brackets; keep this override after the legacy pattern.
+m[[]1])
+script/__pycache__/
+script/*_last_result.txt
