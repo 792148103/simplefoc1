@@ -1,0 +1,15 @@
+# e2studio build products
+Debug/
+Release/
+
+# Local IDE/index files
+.clangd
+.settings/.cache/
+
+# Accidental local web-server command files
+m[1])
+require(*
+
+# Host OS metadata
+Thumbs.db
+Desktop.ini

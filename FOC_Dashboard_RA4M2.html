@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RA4M2 FOC 调试面板</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --panel: #ffffff;
+      --panel-soft: #f9fafb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d8dde5;
+      --blue: #2563eb;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #dc2626;
+      --ink: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+      border-radius: 6px;
+      min-height: 34px;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: #9aa4b2;
+      background: #f3f4f6;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    button.danger {
+      background: #ffffff;
+      border-color: #fecaca;
+      color: var(--red);
+    }
+
+    button.segment {
+      border-radius: 0;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      min-height: 32px;
+    }
+
+    button.segment.active {
+      background: #ffffff;
+      color: var(--blue);
+      border-color: var(--line);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    input,
+    select {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 9px;
+      color: var(--ink);
+      background: #ffffff;
+    }
+
+    input[type="number"] {
+      width: 96px;
+      text-align: right;
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .app {
+      max-width: 1440px;
+      min-width: 320px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      color: var(--ink);
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .connect-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 10px;
+      background: #ffffff;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .status.connected {
+      border-color: #bbf7d0;
+      color: var(--green);
+      background: #f0fdf4;
+    }
+
+    .status.error {
+      border-color: #fecaca;
+      color: var(--red);
+      background: #fef2f2;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .charts {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .charts .wide-panel {
+      grid-column: 1 / -1;
+    }
+
+    .controls {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .panel.span-3 {
+      grid-column: span 3;
+    }
+
+    .panel.span-4 {
+      grid-column: span 4;
+    }
+
+    .panel.span-5 {
+      grid-column: span 5;
+    }
+
+    .panel.span-6 {
+      grid-column: span 6;
+    }
+
+    .panel.disabled {
+      opacity: 0.48;
+      pointer-events: none;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .chart-wrap {
+      height: 270px;
+      min-height: 270px;
+    }
+
+    .chart-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      min-height: 64px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .metric .value {
+      font-family: Consolas, "Courier New", monospace;
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric .unit {
+      color: var(--muted);
+      font-size: 12px;
+      margin-left: 3px;
+      font-weight: 500;
+    }
+
+    .segment-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      padding: 2px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 38px;
+      border-bottom: 1px solid #eef1f5;
+    }
+
+    .field:last-child {
+      border-bottom: 0;
+    }
+
+    .field label {
+      color: var(--text);
+      min-width: 82px;
+    }
+
+    .field-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step {
+      width: 34px;
+      min-width: 34px;
+      padding: 0;
+      font-weight: 700;
+    }
+
+    .command-block {
+      display: grid;
+      gap: 10px;
+    }
+
+    .target-row,
+    .jog-row {
+      display: grid;
+      grid-template-columns: 108px 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .target-row input,
+    .target-row select {
+      width: 100%;
+    }
+
+    .jog-row {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .diagnostic-readout {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .readout {
+      border: 1px solid #eef1f5;
+      border-radius: 6px;
+      padding: 7px 8px;
+      background: var(--panel-soft);
+      min-width: 0;
+    }
+
+    .readout .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .readout .value {
+      color: var(--ink);
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .log {
+      height: 142px;
+      overflow: auto;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #111827;
+      color: #d1d5db;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+
+    .warn {
+      color: var(--amber);
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    @media (max-width: 1100px) {
+      .charts,
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .panel.span-3,
+      .panel.span-4,
+      .panel.span-5,
+      .panel.span-6 {
+        grid-column: auto;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        padding: 10px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .connect-row {
+        justify-content: flex-start;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .target-row {
+        grid-template-columns: 1fr;
+      }
+
+      .button-row,
+      .diagnostic-readout {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="title">
+        <h1>RA4M2 FOC 调试面板</h1>
+        <div class="subtitle">串口协议：NMD / NTG / PID 参数写入，数据帧：target, actual, current_q, target_current, Ua, Ub, Uc, electrical_angle, Uq, Ud</div>
+      </div>
+      <div class="connect-row">
+        <span id="status" class="status">未连接</span>
+        <select id="baudrate" aria-label="波特率">
+          <option value="115200">115200</option>
+          <option value="230400">230400</option>
+          <option value="460800">460800</option>
+          <option value="921600">921600</option>
+          <option value="9600">9600</option>
+        </select>
+        <button id="connectBtn" class="primary">连接串口</button>
+      </div>
+    </header>
+
+    <div id="serialWarn" class="warn">当前浏览器不支持 Web Serial。请使用新版 Chrome 或 Edge 打开。</div>
+
+    <section class="metrics">
+      <div class="metric">
+        <div class="label">控制模式</div>
+        <div id="modeMetric" class="value">位置</div>
+      </div>
+      <div class="metric">
+        <div class="label">目标</div>
+        <div class="value"><span id="targetMetric">0.000</span><span id="targetUnitMetric" class="unit">rad</span></div>
+      </div>
+      <div class="metric">
+        <div class="label" id="actualMetricLabel">实际角度</div>
+        <div class="value"><span id="actualMetric">0.000</span><span id="actualUnitMetric" class="unit">rad</span></div>
+      </div>
+      <div class="metric">
+        <div class="label">Q 轴电流</div>
+        <div class="value"><span id="currentMetric">0.000</span><span class="unit">A</span></div>
+      </div>
+      <div class="metric">
+        <div class="label">目标电流</div>
+        <div class="value"><span id="targetCurrentMetric">0.000</span><span class="unit">A</span></div>
+      </div>
+      <div class="metric">
+        <div class="label">最后确认</div>
+        <div id="ackMetric" class="value">--</div>
+      </div>
+      <div class="metric">
+        <div class="label">A 相输出</div>
+        <div class="value"><span id="phaseAMetric">0.000</span><span class="unit">V</span></div>
+      </div>
+      <div class="metric">
+        <div class="label">B 相输出</div>
+        <div class="value"><span id="phaseBMetric">0.000</span><span class="unit">V</span></div>
+      </div>
+      <div class="metric">
+        <div class="label">C 相输出</div>
+        <div class="value"><span id="phaseCMetric">0.000</span><span class="unit">V</span></div>
+      </div>
+      <div class="metric">
+        <div class="label">电角度</div>
+        <div class="value"><span id="electricalAngleMetric">0.000</span><span class="unit">rad</span></div>
+      </div>
+      <div class="metric">
+        <div class="label">Uq</div>
+        <div class="value"><span id="voltageQMetric">0.000</span><span class="unit">V</span></div>
+      </div>
+      <div class="metric">
+        <div class="label">Ud</div>
+        <div class="value"><span id="voltageDMetric">0.000</span><span class="unit">V</span></div>
+      </div>
+    </section>
+
+    <section class="grid charts">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 id="mainChartTitle">位置响应</h2>
+          <span id="sampleInfo" class="small">等待数据</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="mainChart"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Q 轴电流</h2>
+          <span class="small">实际 / 目标</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="currentChart"></canvas>
+        </div>
+      </div>
+
+      <div class="panel wide-panel">
+        <div class="panel-head">
+          <h2>ABC 三相输出</h2>
+          <span class="small">SimpleFOC 计算相电压 Ua / Ub / Uc</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="phaseChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid controls" style="margin-top:12px;">
+      <div class="panel span-3">
+        <div class="panel-head">
+          <h3>运行指令</h3>
+        </div>
+        <div class="command-block">
+          <div class="segment-group">
+            <button id="mode0Btn" class="segment active" type="button">位置模式</button>
+            <button id="mode1Btn" class="segment" type="button">速度模式</button>
+          </div>
+          <div class="target-row">
+            <label id="targetLabel" for="targetInput">目标圈数</label>
+            <input id="targetInput" type="number" value="0" step="0.5">
+          </div>
+          <button id="sendTargetBtn" class="primary" type="button">发送目标</button>
+          <div class="jog-row">
+            <button id="jogMinusBtn" type="button">-1 圈</button>
+            <button id="jogPlusBtn" type="button">+1 圈</button>
+          </div>
+          <div id="targetHint" class="small">位置模式下输入圈数，发送时自动换算为弧度。</div>
+          <div class="jog-row">
+            <button id="diagQuietBtn" type="button">静默诊断</button>
+            <button id="diagNormalBtn" type="button">恢复显示</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="anglePidPanel" class="panel span-3">
+        <div class="panel-head">
+          <h3>角度环</h3>
+        </div>
+        <div class="field">
+          <label for="NAP">P</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NAP" data-step="-0.5" type="button">-</button>
+            <input id="NAP" type="number" value="28.0" step="0.5">
+            <button class="step" data-step-id="NAP" data-step="0.5" type="button">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel span-3">
+        <div class="panel-head">
+          <h3>速度环</h3>
+        </div>
+        <div class="field">
+          <label for="NVP">P</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NVP" data-step="-0.001" type="button">-</button>
+            <input id="NVP" type="number" value="0.025" step="0.001">
+            <button class="step" data-step-id="NVP" data-step="0.001" type="button">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="NVI">I</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NVI" data-step="-0.01" type="button">-</button>
+            <input id="NVI" type="number" value="0.5" step="0.01">
+            <button class="step" data-step-id="NVI" data-step="0.01" type="button">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="NVF">Tf</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NVF" data-step="-0.001" type="button">-</button>
+            <input id="NVF" type="number" value="0.025" step="0.001">
+            <button class="step" data-step-id="NVF" data-step="0.001" type="button">+</button>
+          </div>
+        </div>
+        <div id="velocityLimitField" class="field">
+          <label for="NVL">速度限制</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NVL" data-step="-5" type="button">-</button>
+            <input id="NVL" type="number" value="300.0" step="5">
+            <button class="step" data-step-id="NVL" data-step="5" type="button">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel span-3">
+        <div class="panel-head">
+          <h3>电流环</h3>
+        </div>
+        <div class="field">
+          <label for="NCQP">Q P</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NCQP" data-step="-0.5" type="button">-</button>
+            <input id="NCQP" type="number" value="7.0" step="0.5">
+            <button class="step" data-step-id="NCQP" data-step="0.5" type="button">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="NCQI">Q I</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NCQI" data-step="-5" type="button">-</button>
+            <input id="NCQI" type="number" value="120.0" step="5">
+            <button class="step" data-step-id="NCQI" data-step="5" type="button">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="NCDP">D P</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NCDP" data-step="-0.5" type="button">-</button>
+            <input id="NCDP" type="number" value="7.0" step="0.5">
+            <button class="step" data-step-id="NCDP" data-step="0.5" type="button">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="NCDI">D I</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NCDI" data-step="-5" type="button">-</button>
+            <input id="NCDI" type="number" value="120.0" step="5">
+            <button class="step" data-step-id="NCDI" data-step="5" type="button">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="NCCF">电流 Tf</label>
+          <div class="field-actions">
+            <button class="step" data-step-id="NCCF" data-step="-0.005" type="button">-</button>
+            <input id="NCCF" type="number" value="0.03" step="0.005">
+            <button class="step" data-step-id="NCCF" data-step="0.005" type="button">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel span-3">
+        <div class="panel-head">
+          <h3>控制模式</h3>
+          <span id="torqueModeState" class="small">位置电压</span>
+        </div>
+        <div class="command-block">
+          <div class="jog-row">
+            <button id="holdAngleVoltageBtn" type="button">位置电压</button>
+            <button id="currentLoopBtn" class="primary" type="button">位置电流</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel span-3">
+        <div class="panel-head">
+          <h3>电流 PID 调试</h3>
+          <span id="currentPidDebugState" class="small">关闭</span>
+        </div>
+        <div class="command-block">
+          <div class="target-row">
+            <label for="currentPidTarget">Iq 目标</label>
+            <input id="currentPidTarget" type="number" min="-0.3" max="0.3" value="0" step="0.01">
+          </div>
+          <div class="target-row">
+            <label for="currentPidDTarget">Id 目标</label>
+            <input id="currentPidDTarget" type="number" min="-0.3" max="0.3" value="0" step="0.01">
+          </div>
+          <div class="target-row">
+            <label for="currentPidLimit">电流限幅</label>
+            <input id="currentPidLimit" type="number" min="0.02" max="0.3" value="0.20" step="0.01">
+          </div>
+          <div class="target-row">
+            <label for="currentPidVoltageLimit">电压限幅</label>
+            <input id="currentPidVoltageLimit" type="number" min="0.5" max="3" value="3.0" step="0.1">
+          </div>
+          <div class="target-row">
+            <label for="currentPidStepMs">阶跃时间</label>
+            <input id="currentPidStepMs" type="number" min="50" max="1000" value="300" step="50">
+          </div>
+          <div class="jog-row">
+            <button id="currentPidDebugOnBtn" type="button">开启调试</button>
+            <button id="currentPidDebugOffBtn" class="danger" type="button">退出调试</button>
+          </div>
+          <div class="jog-row">
+            <button id="currentPidStepBtn" type="button">Iq 阶跃</button>
+            <button id="currentPidZeroBtn" class="danger" type="button">Iq/Id 清零</button>
+          </div>
+          <div class="diagnostic-readout">
+            <div><span>Iq 参考</span><strong id="currentPidIqReference">0.000 A</strong></div>
+            <div><span>Id 参考</span><strong id="currentPidIdReference">0.000 A</strong></div>
+            <div><span>Id 实测</span><strong id="currentPidIdMeasured">0.000 A</strong></div>
+            <div><span>电角度</span><strong id="currentPidElectricalAngle">0.000 rad</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel span-3">
+        <div class="panel-head">
+          <h3>FOC 校准</h3>
+          <span id="calibrationState" class="small">未保存</span>
+        </div>
+        <div class="command-block">
+          <div class="jog-row">
+            <button id="exportCalibrationBtn" type="button">读取并保存</button>
+            <button id="runCalibrationBtn" class="danger" type="button">完整校准</button>
+          </div>
+          <div id="calibrationSummary" class="small">--</div>
+        </div>
+      </div>
+
+      <div class="panel span-4">
+        <div class="panel-head">
+          <h3>串口记录</h3>
+          <button id="clearLogBtn" type="button">清空</button>
+        </div>
+        <div id="log" class="log"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const maxPoints = 180;
+    const maxHistoryPoints = 1800;
+    const paramStorageKey = "ra4m2-foc-dashboard-param-pools-v1";
+    const calibrationStorageKey = "ra4m2-foc-dashboard-calibration-v1";
+    const encoder = new TextEncoder();
+
+    let port = null;
+    let writer = null;
+    let reader = null;
+    let readableClosed = null;
+    let currentMode = 0;
+    let currentTorqueMode = 0;
+    let currentPidDebugActive = false;
+    let currentTargetValue = 0;
+    let receivedFrames = 0;
+    let lastSampleTime = 0;
+
+    const paramsAngle = {
+      NAP: 28.0,
+      NVP: 0.025,
+      NVI: 0.5,
+      NVF: 0.025,
+      NVL: 300.0,
+      NCQP: 7.0,
+      NCQI: 120.0,
+      NCDP: 7.0,
+      NCDI: 120.0,
+      NCCF: 0.03
+    };
+
+    const paramsVelocity = {
+      NAP: 0.0,
+      NVP: 0.05,
+      NVI: 1.0,
+      NVF: 0.02,
+      NVL: 50.0,
+      NCQP: 7.0,
+      NCQI: 120.0,
+      NCDP: 7.0,
+      NCDI: 120.0,
+      NCCF: 0.03
+    };
+
+    let currentParams = paramsAngle;
+    restoreSavedParams();
+
+    const els = {
+      status: document.getElementById("status"),
+      connectBtn: document.getElementById("connectBtn"),
+      baudrate: document.getElementById("baudrate"),
+      serialWarn: document.getElementById("serialWarn"),
+      mode0Btn: document.getElementById("mode0Btn"),
+      mode1Btn: document.getElementById("mode1Btn"),
+      anglePidPanel: document.getElementById("anglePidPanel"),
+      targetInput: document.getElementById("targetInput"),
+      targetLabel: document.getElementById("targetLabel"),
+      targetHint: document.getElementById("targetHint"),
+      jogMinusBtn: document.getElementById("jogMinusBtn"),
+      jogPlusBtn: document.getElementById("jogPlusBtn"),
+      sendTargetBtn: document.getElementById("sendTargetBtn"),
+      velocityLimitField: document.getElementById("velocityLimitField"),
+      diagQuietBtn: document.getElementById("diagQuietBtn"),
+      diagNormalBtn: document.getElementById("diagNormalBtn"),
+      currentLoopBtn: document.getElementById("currentLoopBtn"),
+      currentPidDebugState: document.getElementById("currentPidDebugState"),
+      currentPidTarget: document.getElementById("currentPidTarget"),
+      currentPidDTarget: document.getElementById("currentPidDTarget"),
+      currentPidLimit: document.getElementById("currentPidLimit"),
+      currentPidVoltageLimit: document.getElementById("currentPidVoltageLimit"),
+      currentPidStepMs: document.getElementById("currentPidStepMs"),
+      currentPidDebugOnBtn: document.getElementById("currentPidDebugOnBtn"),
+      currentPidDebugOffBtn: document.getElementById("currentPidDebugOffBtn"),
+      currentPidStepBtn: document.getElementById("currentPidStepBtn"),
+      currentPidZeroBtn: document.getElementById("currentPidZeroBtn"),
+      currentPidIqReference: document.getElementById("currentPidIqReference"),
+      currentPidIdReference: document.getElementById("currentPidIdReference"),
+      currentPidIdMeasured: document.getElementById("currentPidIdMeasured"),
+      currentPidElectricalAngle: document.getElementById("currentPidElectricalAngle"),
+      holdAngleVoltageBtn: document.getElementById("holdAngleVoltageBtn"),
+      torqueModeState: document.getElementById("torqueModeState"),
+      exportCalibrationBtn: document.getElementById("exportCalibrationBtn"),
+      runCalibrationBtn: document.getElementById("runCalibrationBtn"),
+      calibrationState: document.getElementById("calibrationState"),
+      calibrationSummary: document.getElementById("calibrationSummary"),
+      log: document.getElementById("log"),
+      clearLogBtn: document.getElementById("clearLogBtn"),
+      modeMetric: document.getElementById("modeMetric"),
+      targetMetric: document.getElementById("targetMetric"),
+      targetUnitMetric: document.getElementById("targetUnitMetric"),
+      actualMetricLabel: document.getElementById("actualMetricLabel"),
+      actualMetric: document.getElementById("actualMetric"),
+      actualUnitMetric: document.getElementById("actualUnitMetric"),
+      currentMetric: document.getElementById("currentMetric"),
+      targetCurrentMetric: document.getElementById("targetCurrentMetric"),
+      ackMetric: document.getElementById("ackMetric"),
+      phaseAMetric: document.getElementById("phaseAMetric"),
+      phaseBMetric: document.getElementById("phaseBMetric"),
+      phaseCMetric: document.getElementById("phaseCMetric"),
+      electricalAngleMetric: document.getElementById("electricalAngleMetric"),
+      voltageQMetric: document.getElementById("voltageQMetric"),
+      voltageDMetric: document.getElementById("voltageDMetric"),
+      mainChartTitle: document.getElementById("mainChartTitle"),
+      sampleInfo: document.getElementById("sampleInfo")
+    };
+
+    if (!("serial" in navigator)) {
+      els.serialWarn.style.display = "block";
+    }
+
+    const mainChart = makeLineChart("mainChart", [
+      { label: "目标角度 rad", color: "#2563eb" },
+      { label: "实际角度 rad", color: "#16a34a" }
+    ]);
+
+    const currentChart = makeLineChart("currentChart", [
+      { label: "Iq 参考 A", color: "#b45309", dash: [5, 4] },
+      { label: "Iq 实测 A", color: "#dc2626" },
+      { label: "Id 参考 A", color: "#2563eb", dash: [5, 4] },
+      { label: "Id 实测 A", color: "#16a34a" }
+    ], { suggestedMin: -0.6, suggestedMax: 0.6 });
+
+    const phaseChart = makeLineChart("phaseChart", [
+      { label: "Ua V", color: "#2563eb" },
+      { label: "Ub V", color: "#16a34a" },
+      { label: "Uc V", color: "#dc2626" }
+    ], { suggestedMin: 0, suggestedMax: 12 });
+
+    els.connectBtn.addEventListener("click", toggleConnection);
+    els.mode0Btn.addEventListener("click", () => switchMode(0));
+    els.mode1Btn.addEventListener("click", () => switchMode(1));
+    els.sendTargetBtn.addEventListener("click", sendTargetCmd);
+    els.jogMinusBtn.addEventListener("click", () => jogTarget(-1));
+    els.jogPlusBtn.addEventListener("click", () => jogTarget(1));
+    els.diagQuietBtn.addEventListener("click", () => sendCommand("NDS1"));
+    els.diagNormalBtn.addEventListener("click", () => sendCommand("NDS0"));
+    els.currentLoopBtn.addEventListener("click", holdAngleCurrent);
+    els.currentPidDebugOnBtn.addEventListener("click", enableCurrentPidDebug);
+    els.currentPidDebugOffBtn.addEventListener("click", disableCurrentPidDebug);
+    els.currentPidTarget.addEventListener("change", sendCurrentPidDebugTarget);
+    els.currentPidDTarget.addEventListener("change", sendCurrentPidDebugDTarget);
+    els.currentPidLimit.addEventListener("change", sendCurrentPidDebugLimit);
+    els.currentPidVoltageLimit.addEventListener("change", sendCurrentPidDebugVoltageLimit);
+    els.currentPidStepBtn.addEventListener("click", runCurrentPidDebugStep);
+    els.currentPidZeroBtn.addEventListener("click", zeroCurrentPidDebugTargets);
+    els.holdAngleVoltageBtn.addEventListener("click", holdAngleVoltage);
+    els.exportCalibrationBtn.addEventListener("click", exportCalibrationProfile);
+    els.runCalibrationBtn.addEventListener("click", runFullCalibration);
+    els.clearLogBtn.addEventListener("click", () => {
+      els.log.textContent = "";
+    });
+
+    document.querySelectorAll(".step").forEach((button) => {
+      button.addEventListener("click", () => {
+        changeVal(button.dataset.stepId, Number(button.dataset.step));
+      });
+    });
+
+    Object.keys(paramsAngle).forEach((id) => {
+      const input = document.getElementById(id);
+      if (input) {
+        input.addEventListener("change", () => manualInput(id));
+      }
+    });
+
+    function makeLineChart(canvasId, series, yOptions = {}) {
+      return new ScopeChart(canvasId, series, yOptions);
+    }
+
+    async function toggleConnection() {
+      if (port) {
+        await disconnectSerial();
+        return;
+      }
+      await connectSerial();
+    }
+
+    async function connectSerial() {
+      if (!("serial" in navigator)) {
+        setConnectionState(false, "浏览器不支持", true);
+        return;
+      }
+
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: Number(els.baudrate.value) });
+
+        writer = port.writable.getWriter();
+        // 使用桌面版已验证的解码链路，按文本行向串口协议解析器传递数据。
+        const decoder = new TextDecoderStream();
+        readableClosed = port.readable.pipeTo(decoder.writable).catch(() => {});
+        reader = decoder.readable.getReader();
+
+        setConnectionState(true, "已连接");
+        appendLog("OPEN " + els.baudrate.value);
+        readSerialLoop();
+        await sendCommand("NDS0");
+      } catch (error) {
+        setConnectionState(false, "连接失败", true);
+        appendLog("ERROR " + error.message);
+        port = null;
+      }
+    }
+
+    async function disconnectSerial() {
+      try {
+        if (reader) {
+          await reader.cancel();
+          await readableClosed;
+          reader.releaseLock();
+        }
+        if (writer) {
+          writer.releaseLock();
+        }
+        if (port) {
+          await port.close();
+        }
+      } catch (error) {
+        appendLog("CLOSE ERROR " + error.message);
+      } finally {
+        reader = null;
+        writer = null;
+        readableClosed = null;
+        port = null;
+        setConnectionState(false, "未连接");
+        appendLog("CLOSE");
+      }
+    }
+
+    async function readSerialLoop() {
+      let buffer = "";
+      while (reader) {
+        try {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += value;
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop();
+          lines.forEach(parseLine);
+        } catch (error) {
+          appendLog("READ ERROR " + error.message);
+          setConnectionState(false, "数据接收中断", true);
+          break;
+        }
+      }
+    }
+
+    function parseLine(rawLine) {
+      const line = rawLine.trim();
+      if (!line) return;
+
+      if (line.startsWith("MCU_ACK:")) {
+        const ack = line.replace("MCU_ACK:", "").trim();
+        els.ackMetric.textContent = ack || "--";
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("DIAG_QUIET:")) {
+        const quiet = line.replace("DIAG_QUIET:", "").trim() === "1";
+        els.ackMetric.textContent = quiet ? "NDS1 QUIET" : "NDS0 NORMAL";
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("FOC_CAL_START")) {
+        els.calibrationState.textContent = "校准中";
+        els.ackMetric.textContent = "FOC CAL START";
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("FOC_CAL_FAIL")) {
+        els.calibrationState.textContent = "校准失败";
+        els.ackMetric.textContent = line;
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("FOC_CAL_RESULT,")) {
+        const profile = parseCalibrationProfile(line);
+        if (profile) {
+          saveCalibrationProfile(profile);
+          updateCalibrationUI(profile, "结果已保存，等待核对");
+          els.ackMetric.textContent = "FOC CAL REVIEW";
+        }
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("FOC_CAL_REVIEW_REQUIRED,")) {
+        els.calibrationState.textContent = "MCU 已失能，等待核对";
+        els.ackMetric.textContent = "FOC CAL MOTOR OFF";
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("FOC_CAL_APPLIED,")) {
+        els.calibrationState.textContent = "已应用到 MCU";
+        els.ackMetric.textContent = "FOC CAL RAM ACTIVE";
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("TORQUE_MODE:")) {
+        currentTorqueMode = line.includes("FOC_CURRENT") ? 1 : 0;
+        updateTorqueModeUI();
+        els.ackMetric.textContent = line.split(",")[0].replace("TORQUE_MODE:", "");
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("CURRENT_PID_DEBUG:")) {
+        currentPidDebugActive = line.startsWith("CURRENT_PID_DEBUG:ON");
+        updateCurrentPidDebugUI();
+        els.ackMetric.textContent = currentPidDebugActive ? "CURRENT PID ON" : "CURRENT PID OFF";
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("CURRENT_PID_STEP:")) {
+        els.ackMetric.textContent = line.replace("CURRENT_PID_STEP:", "CURRENT STEP ");
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("CURPID_CFG,")) {
+        const fields = Object.fromEntries(line.split(",").slice(1).map((item) => item.split("=")));
+        if (fields.iq !== undefined) els.currentPidTarget.value = Number(fields.iq).toFixed(3);
+        if (fields.id !== undefined) els.currentPidDTarget.value = Number(fields.id).toFixed(3);
+        if (fields.limit !== undefined) els.currentPidLimit.value = Number(fields.limit).toFixed(3);
+        if (fields.voltage !== undefined) els.currentPidVoltageLimit.value = Number(fields.voltage).toFixed(2);
+        appendLog("< " + line);
+        return;
+      }
+
+      if (line.startsWith("CURPID,")) {
+        const values = line.split(",").slice(1).map((item) => Number(item.trim()));
+        if (values.length !== 12 || values.some((value) => Number.isNaN(value))) {
+          appendLog("< " + line);
+          return;
+        }
+
+        receivedFrames += 1;
+        updateSampleInfo();
+        pushChart(currentChart, [values[0], values[2], values[1], values[3]]);
+        els.currentMetric.textContent = values[2].toFixed(3);
+        els.targetCurrentMetric.textContent = values[0].toFixed(3);
+        els.voltageQMetric.textContent = values[4].toFixed(3);
+        els.voltageDMetric.textContent = values[5].toFixed(3);
+        els.phaseAMetric.textContent = values[6].toFixed(3);
+        els.phaseBMetric.textContent = values[7].toFixed(3);
+        els.phaseCMetric.textContent = values[8].toFixed(3);
+        els.electricalAngleMetric.textContent = values[9].toFixed(3);
+        els.currentPidIqReference.textContent = values[0].toFixed(3) + " A";
+        els.currentPidIdReference.textContent = values[1].toFixed(3) + " A";
+        els.currentPidIdMeasured.textContent = values[3].toFixed(3) + " A";
+        els.currentPidElectricalAngle.textContent = values[9].toFixed(3) + " rad";
+        return;
+      }
+
+      if (line.startsWith("CUR,")) {
+        appendLog("< " + line);
+        return;
+      }
+
+      const data = line.split(",").map((item) => Number(item.trim()));
+      if (data.length < 2 || data.some((value) => Number.isNaN(value))) {
+        appendLog("< " + line);
+        return;
+      }
+
+      currentTargetValue = data[0];
+      receivedFrames += 1;
+      updateSampleInfo();
+
+      pushChart(mainChart, [data[0], data[1]]);
+      els.targetMetric.textContent = data[0].toFixed(3);
+      els.actualMetric.textContent = data[1].toFixed(3);
+
+      if (data.length >= 4) {
+        pushChart(currentChart, [data[3], data[2], null, null]);
+        els.currentMetric.textContent = data[2].toFixed(3);
+        els.targetCurrentMetric.textContent = data[3].toFixed(3);
+      }
+
+      if (data.length >= 7) {
+        pushChart(phaseChart, [data[4], data[5], data[6]]);
+        els.phaseAMetric.textContent = data[4].toFixed(3);
+        els.phaseBMetric.textContent = data[5].toFixed(3);
+        els.phaseCMetric.textContent = data[6].toFixed(3);
+      }
+
+      if (data.length >= 10) {
+        els.electricalAngleMetric.textContent = data[7].toFixed(3);
+        els.voltageQMetric.textContent = data[8].toFixed(3);
+        els.voltageDMetric.textContent = data[9].toFixed(3);
+      }
+    }
+
+    function pushChart(chart, values) {
+      chart.push(values);
+    }
+
+    function updateSampleInfo() {
+      const now = performance.now();
+      if (lastSampleTime > 0) {
+        const dt = Math.max(1, now - lastSampleTime);
+        const hz = 1000 / dt;
+        els.sampleInfo.textContent = receivedFrames + " 帧，" + hz.toFixed(1) + " Hz";
+      } else {
+        els.sampleInfo.textContent = receivedFrames + " 帧";
+      }
+      lastSampleTime = now;
+    }
+
+    async function switchMode(mode) {
+      if (mode !== 0 && mode !== 1) return;
+      currentMode = mode;
+      currentParams = mode === 0 ? paramsAngle : paramsVelocity;
+
+      updateModeUI();
+      loadParamsToInputs();
+
+      await sendCommand("NMD" + mode);
+
+      for (const [key, value] of Object.entries(currentParams)) {
+        if (key === "NAP" && mode === 1) continue;
+        if (key === "NVL" && mode === 1) continue;
+        await sendCommand(key + value);
+        await wait(15);
+      }
+
+      updateTorqueModeUI();
+    }
+
+    function updateModeUI() {
+      const isAngleMode = currentMode === 0;
+
+      els.mode0Btn.classList.toggle("active", isAngleMode);
+      els.mode1Btn.classList.toggle("active", !isAngleMode);
+      els.anglePidPanel.classList.toggle("disabled", !isAngleMode);
+      els.velocityLimitField.style.display = isAngleMode ? "" : "none";
+
+      els.modeMetric.textContent = isAngleMode ? "位置" : "速度";
+      els.mainChartTitle.textContent = isAngleMode ? "位置响应" : "速度响应";
+      els.targetLabel.textContent = isAngleMode ? "目标圈数" : "目标转速";
+      els.targetHint.textContent = isAngleMode ? "位置模式下输入圈数，发送时自动换算为弧度。" : "速度模式下直接发送 rad/s。";
+      els.targetInput.value = isAngleMode ? "0" : "0";
+      els.targetInput.step = isAngleMode ? "0.5" : "1";
+      els.jogMinusBtn.textContent = isAngleMode ? "-1 圈" : "-5 rad/s";
+      els.jogPlusBtn.textContent = isAngleMode ? "+1 圈" : "+5 rad/s";
+
+      els.targetUnitMetric.textContent = isAngleMode ? "rad" : "rad/s";
+      els.actualMetricLabel.textContent = isAngleMode ? "实际角度" : "实际速度";
+      els.actualUnitMetric.textContent = isAngleMode ? "rad" : "rad/s";
+
+      mainChart.setLabels([
+        isAngleMode ? "目标角度 rad" : "目标速度 rad/s",
+        isAngleMode ? "实际角度 rad" : "实际速度 rad/s"
+      ]);
+
+      updateTorqueModeUI();
+    }
+
+    function updateTorqueModeUI() {
+      const modePrefix = currentMode === 0 ? "位置" : "速度";
+      const torqueSuffix = currentTorqueMode === 0 ? "电压" : "电流";
+
+      els.torqueModeState.textContent = modePrefix + torqueSuffix;
+      els.holdAngleVoltageBtn.textContent = modePrefix + "电压";
+      els.currentLoopBtn.textContent = modePrefix + "电流";
+      els.holdAngleVoltageBtn.classList.toggle("primary", currentTorqueMode === 0);
+      els.currentLoopBtn.classList.toggle("primary", currentTorqueMode === 1);
+    }
+
+    function updateCurrentPidDebugUI() {
+      els.currentPidDebugState.textContent = currentPidDebugActive ? "已开启" : "关闭";
+      els.currentPidDebugOnBtn.classList.toggle("primary", currentPidDebugActive);
+      els.currentPidDebugOffBtn.disabled = !currentPidDebugActive;
+      els.currentPidStepBtn.disabled = !currentPidDebugActive;
+      els.currentPidZeroBtn.disabled = !currentPidDebugActive;
+
+      [els.mode0Btn, els.mode1Btn, els.targetInput, els.sendTargetBtn,
+       els.jogMinusBtn, els.jogPlusBtn, els.holdAngleVoltageBtn, els.currentLoopBtn]
+        .forEach((element) => { element.disabled = currentPidDebugActive; });
+    }
+
+    async function sendTargetCmd() {
+      const raw = Number(els.targetInput.value);
+      if (Number.isNaN(raw)) return;
+
+      const target = currentMode === 0 ? raw * 2 * Math.PI : raw;
+      await sendCommand("NTG" + target.toFixed(4));
+    }
+
+    async function jogTarget(direction) {
+      const delta = currentMode === 0 ? direction * 2 * Math.PI : direction * 5.0;
+      const target = currentTargetValue + delta;
+      await sendCommand("NTG" + target.toFixed(4));
+    }
+
+    async function holdAngleVoltage() {
+      // 保留旧函数名以兼容已有按钮绑定，实际只切换电压力矩环。
+      currentTorqueMode = 0;
+      updateTorqueModeUI();
+      await sendCommand("NTC0");
+    }
+
+    async function holdAngleCurrent() {
+      // 保留旧函数名以兼容已有按钮绑定，实际只切换电流力矩环。
+      currentTorqueMode = 1;
+      updateTorqueModeUI();
+      await sendCommand("NTC1");
+    }
+
+    async function enableCurrentPidDebug() {
+      currentPidDebugActive = true;
+      updateCurrentPidDebugUI();
+      await sendCommand("NDS0");
+      await sendCommand("NCP1");
+      await sendCurrentPidDebugLimit();
+      await sendCurrentPidDebugVoltageLimit();
+      await sendCurrentPidDebugTarget();
+      await sendCurrentPidDebugDTarget();
+    }
+
+    async function disableCurrentPidDebug() {
+      await sendCommand("NCP0");
+    }
+
+    async function sendCurrentPidDebugTarget() {
+      let target = Number(els.currentPidTarget.value);
+      if (!Number.isFinite(target)) target = 0;
+      target = Math.max(-0.3, Math.min(0.3, target));
+      els.currentPidTarget.value = target.toFixed(3);
+      if (currentPidDebugActive) {
+        await sendCommand("NDBQ" + target.toFixed(3));
+      }
+    }
+
+    async function sendCurrentPidDebugDTarget() {
+      let target = Number(els.currentPidDTarget.value);
+      if (!Number.isFinite(target)) target = 0;
+      target = Math.max(-0.3, Math.min(0.3, target));
+      els.currentPidDTarget.value = target.toFixed(3);
+      if (currentPidDebugActive) {
+        await sendCommand("NDBD" + target.toFixed(3));
+      }
+    }
+
+    async function sendCurrentPidDebugLimit() {
+      let limit = Number(els.currentPidLimit.value);
+      if (!Number.isFinite(limit)) limit = 0.20;
+      limit = Math.max(0.02, Math.min(0.30, limit));
+      els.currentPidLimit.value = limit.toFixed(3);
+      if (currentPidDebugActive) {
+        await sendCommand("NDBL" + limit.toFixed(3));
+      }
+    }
+
+    async function sendCurrentPidDebugVoltageLimit() {
+      let limit = Number(els.currentPidVoltageLimit.value);
+      if (!Number.isFinite(limit)) limit = 3.0;
+      limit = Math.max(0.5, Math.min(3.0, limit));
+      els.currentPidVoltageLimit.value = limit.toFixed(2);
+      if (currentPidDebugActive) {
+        await sendCommand("NDBV" + limit.toFixed(2));
+      }
+    }
+
+    async function runCurrentPidDebugStep() {
+      let duration = Number(els.currentPidStepMs.value);
+      if (!Number.isFinite(duration)) duration = 300;
+      duration = Math.max(50, Math.min(1000, Math.round(duration)));
+      els.currentPidStepMs.value = String(duration);
+      if (currentPidDebugActive) {
+        await sendCommand("NDBS" + duration);
+      }
+    }
+
+    async function zeroCurrentPidDebugTargets() {
+      els.currentPidTarget.value = "0.000";
+      els.currentPidDTarget.value = "0.000";
+      if (currentPidDebugActive) {
+        await sendCommand("NDBQ0.000");
+        await sendCommand("NDBD0.000");
+      }
+    }
+
+    async function exportCalibrationProfile() {
+      await sendCommand("NCE");
+    }
+
+    async function runFullCalibration() {
+      const confirmed = window.confirm("完整 FOC 校准会驱动电机旋转。请确保转子可自由转动且周围无人接触，是否继续？");
+      if (!confirmed) return;
+
+      els.calibrationState.textContent = "等待校准";
+      await sendCommand("NCA1");
+    }
+
+    async function changeVal(cmd, step) {
+      if (!(cmd in currentParams)) return;
+      if (currentMode === 1 && cmd === "NVL") return;
+
+      let next = Number((currentParams[cmd] + step).toFixed(4));
+      if (cmd === "NVL" && next <= 0) next = 5.0;
+      if (cmd === "NAP" && next < 0) next = 0.0;
+
+      currentParams[cmd] = next;
+      document.getElementById(cmd).value = String(Number(next.toFixed(4)));
+      saveParams();
+      await sendCommand(cmd + next);
+    }
+
+    async function manualInput(cmd) {
+      if (currentMode === 1 && cmd === "NVL") return;
+
+      const input = document.getElementById(cmd);
+      let value = Number(input.value);
+      if (Number.isNaN(value)) {
+        input.value = currentParams[cmd];
+        return;
+      }
+      if (cmd === "NVL" && value <= 0) value = 5.0;
+      if (cmd === "NAP" && value < 0) value = 0.0;
+
+      currentParams[cmd] = Number(value.toFixed(4));
+      input.value = String(currentParams[cmd]);
+      saveParams();
+      await sendCommand(cmd + currentParams[cmd]);
+    }
+
+    function loadParamsToInputs() {
+      Object.entries(currentParams).forEach(([key, value]) => {
+        const input = document.getElementById(key);
+        if (input) {
+          input.value = String(Number(value.toFixed(4)));
+        }
+      });
+    }
+
+    function restoreSavedParams() {
+      let saved = null;
+      try {
+        saved = JSON.parse(localStorage.getItem(paramStorageKey) || "null");
+      } catch (error) {
+        saved = null;
+      }
+
+      if (!saved || typeof saved !== "object") return;
+
+      restoreParamPool(paramsAngle, saved.angle);
+      restoreParamPool(paramsVelocity, saved.velocity);
+    }
+
+    function restoreParamPool(target, source) {
+      if (!source || typeof source !== "object") return;
+
+      Object.keys(target).forEach((key) => {
+        const value = Number(source[key]);
+        if (Number.isFinite(value)) {
+          target[key] = value;
+        }
+      });
+    }
+
+    function saveParams() {
+      try {
+        localStorage.setItem(paramStorageKey, JSON.stringify({
+          angle: paramsAngle,
+          velocity: paramsVelocity
+        }));
+      } catch (error) {
+        appendLog("PARAM SAVE ERROR");
+      }
+    }
+
+    function parseCalibrationProfile(line) {
+      const profile = { savedAt: new Date().toISOString() };
+      const numericKeys = new Set(["zero", "gainA", "gainB", "offsetA", "offsetB"]);
+
+      line.split(",").slice(1).forEach((part) => {
+        const separator = part.indexOf("=");
+        if (separator <= 0) return;
+        const key = part.slice(0, separator);
+        const rawValue = part.slice(separator + 1);
+        const value = numericKeys.has(key) ? Number(rawValue) : rawValue;
+        if (numericKeys.has(key) && !Number.isFinite(value)) return;
+        profile[key] = value;
+      });
+
+      return (profile.dir && Number.isFinite(profile.zero) && profile.pinA && profile.pinB) ? profile : null;
+    }
+
+    function saveCalibrationProfile(profile) {
+      try {
+        localStorage.setItem(calibrationStorageKey, JSON.stringify(profile));
+      } catch (error) {
+        appendLog("CAL SAVE ERROR");
+      }
+    }
+
+    function restoreSavedCalibration() {
+      try {
+        const profile = JSON.parse(localStorage.getItem(calibrationStorageKey) || "null");
+        if (profile && typeof profile === "object") {
+          updateCalibrationUI(profile, "已保存");
+        }
+      } catch (error) {
+        els.calibrationState.textContent = "保存读取失败";
+      }
+    }
+
+    function updateCalibrationUI(profile, state) {
+      const zero = Number(profile.zero);
+      const gainA = Number(profile.gainA);
+      const gainB = Number(profile.gainB);
+      const offsetA = Number(profile.offsetA);
+      const offsetB = Number(profile.offsetB);
+      els.calibrationState.textContent = state;
+      els.calibrationSummary.textContent =
+        "dir " + profile.dir + " | zero " + (Number.isFinite(zero) ? zero.toFixed(6) : "--") +
+        " | " + profile.pinA + "/" + profile.pinB +
+        " | gain " + (Number.isFinite(gainA) ? gainA.toFixed(3) : "--") +
+        "/" + (Number.isFinite(gainB) ? gainB.toFixed(3) : "--") +
+        " | offset " + (Number.isFinite(offsetA) ? offsetA.toFixed(6) : "--") +
+        "/" + (Number.isFinite(offsetB) ? offsetB.toFixed(6) : "--");
+    }
+
+    async function sendCommand(command) {
+      if (!writer) {
+        appendLog("SKIP " + command + " (未连接)");
+        return;
+      }
+
+      await writer.write(encoder.encode(command + "\n"));
+      appendLog("> " + command);
+    }
+
+    function setConnectionState(connected, text, isError = false) {
+      els.status.textContent = text;
+      els.status.classList.toggle("connected", connected);
+      els.status.classList.toggle("error", isError);
+      els.connectBtn.textContent = connected ? "断开串口" : "连接串口";
+      els.connectBtn.classList.toggle("danger", connected);
+      els.connectBtn.classList.toggle("primary", !connected);
+    }
+
+    function appendLog(text) {
+      const time = new Date().toLocaleTimeString("zh-CN", { hour12: false });
+      els.log.textContent += "[" + time + "] " + text + "\n";
+      els.log.scrollTop = els.log.scrollHeight;
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function ScopeChart(canvasId, series, yOptions = {}) {
+      this.canvas = document.getElementById(canvasId);
+      this.ctx = this.canvas.getContext("2d");
+      this.series = series.map((item) => ({
+        label: item.label,
+        color: item.color,
+        dash: item.dash || [],
+        data: []
+      }));
+      // 仅用于显示的三点历史，不影响实时指标或发送到 MCU 的控制参数。
+      this.displayHistory = series.map(() => []);
+      this.sampleNumbers = [];
+      this.totalSamples = 0;
+      this.viewOffset = 0;
+      this.hoverX = null;
+      this.dragging = false;
+      this.dragStartX = 0;
+      this.dragStartOffset = 0;
+      this.yOptions = yOptions;
+      this.resize = () => {
+        if (typeof this.draw === "function") this.draw();
+      };
+      window.addEventListener("resize", this.resize);
+
+      this.canvas.addEventListener("pointerdown", (event) => {
+        const point = this.getPointerPoint(event);
+        this.dragging = true;
+        this.dragStartX = point.x;
+        this.dragStartOffset = this.viewOffset;
+        this.hoverX = point.x;
+        this.canvas.setPointerCapture(event.pointerId);
+        this.draw();
+      });
+
+      this.canvas.addEventListener("pointermove", (event) => {
+        const point = this.getPointerPoint(event);
+        this.hoverX = point.x;
+        if (this.dragging) {
+          const plotWidth = Math.max(1, this.canvas.clientWidth - 62);
+          const samplesPerPixel = Math.max(1, maxPoints - 1) / plotWidth;
+          this.viewOffset = Math.max(0, Math.min(this.maxViewOffset(),
+            Math.round(this.dragStartOffset + (point.x - this.dragStartX) * samplesPerPixel)));
+        }
+        this.draw();
+      });
+
+      this.canvas.addEventListener("pointerup", (event) => {
+        this.dragging = false;
+        this.hoverX = this.getPointerPoint(event).x;
+        if (this.canvas.hasPointerCapture(event.pointerId)) {
+          this.canvas.releasePointerCapture(event.pointerId);
+        }
+        this.draw();
+      });
+
+      this.canvas.addEventListener("pointercancel", () => {
+        this.dragging = false;
+        this.draw();
+      });
+
+      this.canvas.addEventListener("pointerleave", () => {
+        if (!this.dragging) {
+          this.hoverX = null;
+          this.draw();
+        }
+      });
+
+      this.canvas.addEventListener("dblclick", () => {
+        this.viewOffset = 0;
+        this.draw();
+      });
+    }
+
+    ScopeChart.prototype.getPointerPoint = function(event) {
+      const rect = this.canvas.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    };
+
+    ScopeChart.prototype.maxViewOffset = function() {
+      const total = this.sampleNumbers.length;
+      return Math.max(0, total - Math.min(maxPoints, total));
+    };
+
+    ScopeChart.prototype.setLabels = function(labels) {
+      labels.forEach((label, index) => {
+        if (this.series[index]) this.series[index].label = label;
+      });
+      this.draw();
+    };
+
+    ScopeChart.prototype.push = function(values) {
+      const preserveHistoryPosition = this.viewOffset > 0;
+      values.forEach((value, index) => {
+        if (!this.series[index]) return;
+        const history = this.displayHistory[index];
+        history.push(value);
+        if (history.length > 3) history.shift();
+
+        let displayValue = value;
+        if (history.length === 3 && history.every((sample) => Number.isFinite(sample))) {
+          const ordered = history.slice().sort((a, b) => a - b);
+          displayValue = ordered[1];
+        }
+
+        this.series[index].data.push(displayValue);
+        if (this.series[index].data.length > maxHistoryPoints) {
+          this.series[index].data.shift();
+        }
+      });
+      this.sampleNumbers.push(++this.totalSamples);
+      if (this.sampleNumbers.length > maxHistoryPoints) {
+        this.sampleNumbers.shift();
+      }
+      if (preserveHistoryPosition) {
+        this.viewOffset += 1;
+      }
+      this.viewOffset = Math.min(this.viewOffset, this.maxViewOffset());
+      this.draw();
+    };
+
+    ScopeChart.prototype.draw = function() {
+      const rect = this.canvas.getBoundingClientRect();
+      const width = Math.max(320, Math.floor(rect.width));
+      const height = Math.max(180, Math.floor(rect.height));
+      const dpr = window.devicePixelRatio || 1;
+
+      if (this.canvas.width !== Math.floor(width * dpr) || this.canvas.height !== Math.floor(height * dpr)) {
+        this.canvas.width = Math.floor(width * dpr);
+        this.canvas.height = Math.floor(height * dpr);
+      }
+
+      const ctx = this.ctx;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      const pad = { left: 48, right: 14, top: 28, bottom: 28 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      const total = this.sampleNumbers.length;
+      const visibleCount = Math.min(maxPoints, total);
+      const viewEnd = total - this.viewOffset;
+      const viewStart = Math.max(0, viewEnd - visibleCount);
+      const visibleSeries = this.series.map((item) => item.data.slice(viewStart, viewEnd));
+      const allValues = visibleSeries.flat().filter((value) => value !== null && Number.isFinite(value));
+
+      let minY = this.yOptions.suggestedMin ?? (allValues.length ? Math.min(...allValues) : -1);
+      let maxY = this.yOptions.suggestedMax ?? (allValues.length ? Math.max(...allValues) : 1);
+      if (minY === maxY) {
+        minY -= 1;
+        maxY += 1;
+      }
+      const span = maxY - minY;
+      minY -= span * 0.08;
+      maxY += span * 0.08;
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "12px Consolas, monospace";
+
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (plotH * i) / 4;
+        const value = maxY - ((maxY - minY) * i) / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(width - pad.right, y);
+        ctx.stroke();
+        ctx.fillText(value.toFixed(2), 6, y + 4);
+      }
+
+      ctx.strokeStyle = "#9ca3af";
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, pad.top + plotH);
+      ctx.lineTo(width - pad.right, pad.top + plotH);
+      ctx.stroke();
+
+      this.series.forEach((item, seriesIndex) => {
+        ctx.save();
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash(item.dash);
+        ctx.beginPath();
+
+        let started = false;
+        visibleSeries[seriesIndex].forEach((value, index) => {
+          if (value === null || !Number.isFinite(value)) {
+            started = false;
+            return;
+          }
+
+          const x = pad.left + (plotW * index) / Math.max(1, visibleCount - 1);
+          const y = pad.top + plotH - ((value - minY) / (maxY - minY)) * plotH;
+          if (!started) {
+            ctx.moveTo(x, y);
+            started = true;
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+
+        ctx.stroke();
+
+        ctx.restore();
+      });
+
+      let legendX = pad.left;
+      this.series.forEach((item) => {
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash(item.dash);
+        ctx.beginPath();
+        ctx.moveTo(legendX, 13);
+        ctx.lineTo(legendX + 22, 13);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#374151";
+        ctx.font = "12px Segoe UI, Microsoft YaHei, sans-serif";
+        ctx.fillText(item.label, legendX + 28, 17);
+        legendX += ctx.measureText(item.label).width + 68;
+      });
+
+      if ((this.hoverX !== null) && (visibleCount > 0) &&
+          (this.hoverX >= pad.left) && (this.hoverX <= (width - pad.right))) {
+        const pointIndex = Math.max(0, Math.min(visibleCount - 1,
+          Math.round(((this.hoverX - pad.left) / plotW) * Math.max(1, visibleCount - 1))));
+        const x = pad.left + (plotW * pointIndex) / Math.max(1, visibleCount - 1);
+        const sampleNumber = this.sampleNumbers[viewStart + pointIndex];
+        const tooltipLines = ["X #" + sampleNumber];
+
+        this.series.forEach((item, seriesIndex) => {
+          const value = visibleSeries[seriesIndex][pointIndex];
+          if (value !== null && Number.isFinite(value)) {
+            tooltipLines.push(item.label + ": " + value.toFixed(3));
+          }
+        });
+
+        ctx.save();
+        ctx.strokeStyle = "#64748b";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, pad.top + plotH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        this.series.forEach((item, seriesIndex) => {
+          const value = visibleSeries[seriesIndex][pointIndex];
+          if (value === null || !Number.isFinite(value)) return;
+          const y = pad.top + plotH - ((value - minY) / (maxY - minY)) * plotH;
+          ctx.fillStyle = item.color;
+          ctx.beginPath();
+          ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        ctx.font = "12px Consolas, Microsoft YaHei, monospace";
+        const tooltipWidth = Math.min(250, Math.max(...tooltipLines.map((line) => ctx.measureText(line).width)) + 18);
+        const tooltipHeight = tooltipLines.length * 18 + 12;
+        const tooltipX = (x + 12 + tooltipWidth <= width - 4) ? x + 12 : x - tooltipWidth - 12;
+        const tooltipY = Math.min(pad.top + 8, height - tooltipHeight - 4);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+        ctx.fillRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+        ctx.fillStyle = "#f8fafc";
+        tooltipLines.forEach((line, index) => {
+          ctx.fillText(line, tooltipX + 9, tooltipY + 18 + index * 18);
+        });
+        ctx.restore();
+      }
+    };
+
+    // ScopeChart 原型方法已注册后再初始化界面，避免 setLabels/push 尚未定义。
+    updateModeUI();
+    updateCurrentPidDebugUI();
+    loadParamsToInputs();
+    restoreSavedCalibration();
+    setConnectionState(false, "未连接");
+
+    requestAnimationFrame(() => {
+      mainChart.draw();
+      currentChart.draw();
+      phaseChart.draw();
+    });
+  </script>
+</body>
+</html>
