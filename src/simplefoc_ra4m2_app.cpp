@@ -17,6 +17,10 @@ extern "C" {
 #define RA4M2_ENABLE_MOTOR_CONTROL 1
 #endif
 
+#ifndef RA4M2_ENABLE_CAN_CONTROL
+#define RA4M2_ENABLE_CAN_CONTROL 1
+#endif
+
 /*
  * J-Link tuning contract:
  * - Edit the requested fields in Live Watch/Expressions.
@@ -2047,12 +2051,15 @@ void update_motor_oled_display()
 
 #include "app/app_telemetry.inc"
 
+#include "app/app_can.inc"
+
 void motor_app_setup()
 {
 #if RA4M2_ENABLE_UART_DASHBOARD
     Serial.begin(115200);
 #endif
     print_reset_status();
+    can_app_init();
     init_oled_display("FOC MOTOR MODE");
     Serial.print(F("FOC_BOOT_ALIGN:"));
     Serial.println(foc_alignment_mode_label(kFocAlignmentMode));
@@ -2217,6 +2224,7 @@ void motor_app_loop()
         sensor2.update();
         monitor_runtime_as5600_fault();
         handleDashboardCommand();
+        can_app_loop();
         update_jlink_tune_status();
         return;
     }
@@ -2232,6 +2240,9 @@ void motor_app_loop()
 
     // P000 中断已经直接拉低 P302；在主循环中完成关 PWM、SimpleFOC 和界面收尾。
     handle_user_button_motor_disable();
+
+    // CAN 命令在主循环应用；位置/速度目标的加减速轨迹在此更新，随后交给原有 move() 外环。
+    can_app_loop();
 
     // 独立电流环调试时，生成 Iq/Id 手动给定或自动回零阶跃给定；普通位置/速度模式不执行此分支。
     update_current_pid_debug_stimulus();
