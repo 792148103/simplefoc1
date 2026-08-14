@@ -63,7 +63,11 @@
 ## 工程结构
 
 ```text
-src/simplefoc_ra4m2_app.cpp   电机应用、闭环、命令、校准和故障码
+src/simplefoc_ra4m2_app.cpp   电机对象、PID/校准、主初始化和主循环入口
+src/app/app_ui.inc            OLED 初始化、数值格式化和显示工具
+src/app/app_safety.inc        P302 使能、P000 中断和故障锁存
+src/app/app_sensor.inc        AS5600 与 ADC 启动校验
+src/app/app_telemetry.inc     网页遥测帧、电流诊断帧和 OLED 运行页面
 src/renesas_simplefoc_port.*  Arduino/SimpleFOC 到 RA FSP 的适配层
 src/SimpleFOC/                SimpleFOC 源码
 src/oled.*                    OLED 驱动
@@ -73,6 +77,8 @@ configuration.xml             e2studio 图形化配置源文件
 FOC_Dashboard_RA4M2.html      浏览器串口上位机
 script/                       Python 位置环整定工具
 ```
+
+`src/app/*.inc` 由 `simplefoc_ra4m2_app.cpp` 在同一个匿名命名空间中包含，不会生成额外目标文件，也不改变电机对象的全局状态、链接方式或初始化顺序。这样适合当前硬件排障阶段按职责阅读代码；等 FOC 校准和电流环稳定后，再将 PID、校准、串口命令拆成独立 `.cpp/.h` 模块会更合适。
 
 不要手工长期修改 `ra_gen/` 中的外设配置。应在 e2studio 打开 `configuration.xml`，修改 Pins/Stacks 后重新生成代码；应用逻辑放在 `src/`。
 
@@ -188,4 +194,3 @@ CANH/CANL 必须经过外置 CAN 收发器；总线物理两端各接一个 `120
 - `ra_cfg/`
 - `ra_gen/`
 - 对应 `src/` 应用逻辑
-

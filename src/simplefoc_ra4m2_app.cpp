@@ -90,90 +90,7 @@ uint8_t as5600_i2c_error = 0U;
 uint32_t sample_count = 0U;
 #endif
 
-void OLED_ShowLine(u8 x, u8 y, const char *text)
-{
-    constexpr size_t kMaxChars = 21U;
-    char line[kMaxChars + 1U];
-    size_t index = 0U;
-
-    for (; index < kMaxChars; index++)
-    {
-        if ('\0' == text[index])
-        {
-            break;
-        }
-        line[index] = text[index];
-    }
-    for (; index < kMaxChars; index++)
-    {
-        line[index] = ' ';
-    }
-    line[kMaxChars] = '\0';
-
-    OLED_ShowString(x, y, reinterpret_cast<u8 *>(line), 8, 1);
-}
-
-void format_fixed(char *buffer, size_t size, float value, uint32_t scale, uint8_t decimals)
-{
-    const bool negative = value < 0.0f;
-    const float abs_value = negative ? -value : value;
-    const uint32_t scaled = static_cast<uint32_t>((abs_value * static_cast<float>(scale)) + 0.5f);
-    const uint32_t integer = scaled / scale;
-    const uint32_t fraction = scaled % scale;
-
-    if (negative)
-    {
-        snprintf(buffer, size, "-%lu.%0*lu", static_cast<unsigned long>(integer), decimals, static_cast<unsigned long>(fraction));
-    }
-    else
-    {
-        snprintf(buffer, size, "%lu.%0*lu", static_cast<unsigned long>(integer), decimals, static_cast<unsigned long>(fraction));
-    }
-}
-
-void SerialPrintFixed(float value, uint32_t scale, uint8_t decimals)
-{
-    char buffer[24];
-    format_fixed(buffer, sizeof(buffer), value, scale, decimals);
-    Serial.print(buffer);
-}
-
-void OLED_ShowFixedLine(u8 y, const char *label, float value, uint32_t scale, uint8_t decimals, const char *unit)
-{
-    char value_text[16];
-    char line[32];
-
-    format_fixed(value_text, sizeof(value_text), value, scale, decimals);
-    snprintf(line, sizeof(line), "%s:%s%s", label, value_text, unit);
-    OLED_ShowLine(0, y, line);
-}
-
-void as5600_i2c_init()
-{
-    Wire.begin();
-    sensor2.init(&Wire);
-}
-
-void init_oled_display(const char *title)
-{
-    (void) title;
-
-#if RA4M2_ENABLE_OLED_DISPLAY
-    fsp_err_t g_err = R_IIC_MASTER_Open(&g_i2c_master0_ctrl, &g_i2c_master0_cfg);
-    assert((FSP_SUCCESS == g_err) || (FSP_ERR_ALREADY_OPEN == g_err));
-
-    OLED_Init();
-    OLED_Clear();
-    OLED_ColorTurn(0);
-    OLED_DisplayTurn(0);
-    OLED_ShowPicture(0, 0, 128, 40, NJUPT, 1);
-    OLED_ShowPicture(0, 40, 117, 19, BMP3, 1);
-    //OLED_ShowPicture(0, 19, 128, 40, NJUPT, 1);
-
-    OLED_Refresh();
-    delay(1000UL);
-#endif
-}
+#include "app/app_ui.inc"
 
 #if RA4M2_ENABLE_MOTOR_CONTROL
 
@@ -508,6 +425,8 @@ bool apply_current_gain_mode(uint8_t mode)
     return true;
 }
 
+// 已迁移至 app/app_safety.inc，保留原实现以便与硬件安全时序对比。
+#if 0
 void set_motor_enable(bool enabled)
 {
     const uint32_t pin_cfg = IOPORT_CFG_PORT_DIRECTION_OUTPUT |
@@ -659,6 +578,12 @@ void handle_user_button_motor_disable()
     }
 }
 
+#endif
+
+#include "app/app_safety.inc"
+
+// 已迁移至 app/app_sensor.inc，保留原实现以便核对启动诊断的输出协议。
+#if 0
 bool calibrate_as5600_startup()
 {
     OLED_Clear();
@@ -880,6 +805,10 @@ void wait_until_adc_calibrated(AdcCalibrationResult *result)
         delay(1000UL);
     }
 }
+
+#endif
+
+#include "app/app_sensor.inc"
 
 void applyCurrentModePID()
 {
@@ -1985,6 +1914,8 @@ void handleDashboardCommand()
     }
 }
 
+// 已迁移至 app/app_telemetry.inc，保留原实现以便核对网页串口协议。
+#if 0
 void print_motor_dashboard_frame()
 {
     char target_text[24];
@@ -2111,6 +2042,10 @@ void update_motor_oled_display()
     OLED_ShowLine(0, 56, motor_user_disabled ? "P000 MOTOR OFF" : "");
     OLED_Refresh();
 }
+
+#endif
+
+#include "app/app_telemetry.inc"
 
 void motor_app_setup()
 {
