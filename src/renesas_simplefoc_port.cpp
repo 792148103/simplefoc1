@@ -556,9 +556,16 @@ extern "C" void renesas_uart_callback(uart_callback_args_t *p_args)
     }
 }
 
+// FSP 在 configuration.xml 中绑定的唯一 CAN 回调入口。
+// 应用层未启用 CAN 时，弱符号为空，仍可保持适配层独立编译。
+extern "C" void simplefoc_can_callback(can_callback_args_t *p_args) __attribute__((weak));
+
 extern "C" void can_callback(can_callback_args_t *p_args)
 {
-    (void) p_args;
+    if (simplefoc_can_callback)
+    {
+        simplefoc_can_callback(p_args);
+    }
 }
 
 extern "C" void _exit(int status);

@@ -46,7 +46,8 @@ float can_deceleration_limit = kCanDefaultDeceleration;
 float can_profile_velocity = 0.0f;
 bool can_target_active = false;
 
-extern "C" void can_callback(can_callback_args_t *p_args)
+// 此函数由适配层的 can_callback() 调用，不能直接作为 FSP 回调重复定义。
+void can_handle_callback(can_callback_args_t *p_args)
 {
     if (NULL == p_args)
     {

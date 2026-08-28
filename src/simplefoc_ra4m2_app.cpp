@@ -75,6 +75,10 @@ volatile Ra4m2JlinkTune g_ra4m2_jlink_tune =
 };
 }
 
+#if RA4M2_ENABLE_MOTOR_CONTROL && RA4M2_ENABLE_CAN_CONTROL
+extern "C" void simplefoc_can_callback(can_callback_args_t *p_args);
+#endif
+
 namespace
 {
 #if !RA4M2_ENABLE_MOTOR_CONTROL
@@ -2396,6 +2400,14 @@ void as5600_monitor_loop()
 #endif
 
 } // namespace
+
+#if RA4M2_ENABLE_MOTOR_CONTROL && RA4M2_ENABLE_CAN_CONTROL
+// 保持 FSP 回调在适配层中定义；此处只将事件转交给应用层 CAN 状态机。
+extern "C" void simplefoc_can_callback(can_callback_args_t *p_args)
+{
+    can_handle_callback(p_args);
+}
+#endif
 
 extern "C" void simplefoc_app_main(void)
 {
